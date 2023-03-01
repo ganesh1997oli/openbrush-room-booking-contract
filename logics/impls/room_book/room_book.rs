@@ -9,8 +9,17 @@ use ink::prelude::string::String;
 use openbrush::{
     contracts::ownable::*,
     modifier_definition, modifiers,
-    traits::{Storage, Timestamp, ZERO_ADDRESS},
+    traits::{AccountId, Storage, Timestamp, ZERO_ADDRESS},
 };
+
+// Events of Hotel room booking
+pub trait HotelRoomBookingEvents {
+    fn emit_add_room_event(&self, room_id: RoomId, owner: AccountId);
+    fn emit_sign_agreement_event(&self, room_id: RoomId, agreement_signer: AccountId);
+    fn emit_rent_payment_event(&self, room_id: RoomId, rent_payment_signer: AccountId);
+    fn emit_agreement_complete_event(&self, room_id: RoomId);
+    fn emit_agreement_terminated_event(&self, room_id: RoomId);
+}
 
 impl<T> RoomBook for T
 where
@@ -48,6 +57,9 @@ where
 
         // insert room in `Mapping` with respect to key `room_id`
         self.data::<Data>().room.insert(&room_id, &new_room);
+
+        // event call
+        self.emit_add_room_event(room_id, caller);
 
         Ok(())
     }
@@ -138,6 +150,9 @@ where
         // insert `Rent` in the rent mapping
         self.data::<Data>().rent.insert(&rent_id, &rent);
 
+        // call the event
+        self.emit_sign_agreement_event(room_id, caller);
+
         Ok(())
     }
 
@@ -201,6 +216,8 @@ where
         // insert `rent` to the mapping
         self.data::<Data>().rent.insert(&rent_id, &rent);
 
+        self.emit_rent_payment_event(room_id, caller);
+
         Ok(())
     }
 
@@ -240,6 +257,8 @@ where
 
         self.data::<Data>().room.insert(&room_id, &room);
 
+        self.emit_agreement_complete_event(room_id);
+
         Ok(())
     }
 
@@ -268,6 +287,7 @@ where
         };
 
         self.data::<Data>().room.insert(&room_id, &room);
+        self.emit_agreement_terminated_event(room_id);
         Ok(())
     }
 
@@ -288,6 +308,17 @@ where
         self.data::<Data>().rent_id += 1;
         rent_id
     }
+}
+
+impl<T> HotelRoomBookingEvents for T
+where
+    T: Storage<Data>,
+{
+    default fn emit_add_room_event(&self, _room_id: RoomId, _owner: AccountId) {}
+    default fn emit_sign_agreement_event(&self, _room_id: RoomId, _agreement_signer: AccountId) {}
+    default fn emit_rent_payment_event(&self, _room_id: RoomId, _rent_payment_signer: AccountId) {}
+    default fn emit_agreement_complete_event(&self, _room_id: RoomId) {}
+    default fn emit_agreement_terminated_event(&self, _room_id: RoomId) {}
 }
 
 // modifier to check normal user
