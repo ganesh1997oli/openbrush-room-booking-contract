@@ -6,7 +6,7 @@ pub use crate::{
 use ink::prelude::string::String;
 use openbrush::{
     contracts::ownable::*,
-    modifiers,
+    modifier_definition, modifiers,
     traits::{Storage, Timestamp, ZERO_ADDRESS},
 };
 
@@ -50,6 +50,7 @@ where
         Ok(())
     }
 
+    #[modifiers(only_fee_setter)]
     default fn sign_agreement(&mut self, room_id: RoomId) -> Result<(), HotelError> {
         Ok(())
     }
@@ -85,4 +86,17 @@ where
         self.data::<Data>().rent_id += 1;
         rent_id
     }
+}
+
+#[modifier_definition]
+pub fn only_fee_setter<T, F, R, E>(instance: &mut T, body: F) -> Result<R, E>
+where
+    T: Storage<Data>,
+    F: FnOnce(&mut T) -> Result<R, E>,
+    E: From<HotelError>,
+{
+    if instance.data().land_lord != T::env().caller() {
+        return Err(From::from(HotelError::CallerIsNotOwner));
+    }
+    body(instance)
 }
