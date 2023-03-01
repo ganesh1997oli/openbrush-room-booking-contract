@@ -144,6 +144,8 @@ pub enum HotelError {
     // Caller is not a marketplace owner.
     OwnableError(OwnableError),
     CallerIsNotOwner,
+    CallerIsOwner,
+    NotEnoughAgreementFee,
 }
 
 impl From<OwnableError> for HotelError {
