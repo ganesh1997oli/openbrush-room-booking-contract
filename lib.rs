@@ -23,6 +23,7 @@ mod hotel {
         pub fn new() -> Self {
             let mut instance = Self::default();
             instance._init_with_owner(Self::env().caller());
+            instance.hotel_data.land_lord = Self::env().caller();
             instance
         }
     }

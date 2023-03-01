@@ -146,6 +146,11 @@ pub enum HotelError {
     CallerIsNotOwner,
     CallerIsOwner,
     NotEnoughAgreementFee,
+    RoomIsNotVacant,
+    NotATenantAddress,
+    NotEnoughRentFee,
+    RoomNotFound,
+    RoomIsVacant,
 }
 
 impl From<OwnableError> for HotelError {

@@ -41,7 +41,7 @@ where
             rent_per_month,
             security_deposit,
             time_stamp,
-            vacant: false,
+            vacant: true,
             landlord: caller,
             current_tenant: ZERO_ADDRESS.into(),
         };
@@ -52,7 +52,7 @@ where
         Ok(())
     }
 
-    #[modifiers(normal_user)]
+    #[modifiers(is_normal_user)]
     default fn sign_agreement(&mut self, room_id: RoomId) -> Result<(), HotelError> {
         // caller of the contract
         let caller = Self::env().caller();
@@ -61,7 +61,10 @@ where
         let value = Self::env().transferred_value();
 
         // get the romm of specific `room_id`
-        let mut room = self.data::<Data>().room.get(&room_id).unwrap_or_default();
+        let room = match self.data::<Data>().room.get(&room_id) {
+            Some(value) => value,
+            None => return Err(HotelError::RoomNotFound),
+        };
 
         // get the room `landlord`
         let room_landlord = room.landlord;
@@ -72,6 +75,9 @@ where
         // check if caller is paying enough `agreement_fee`
         ensure!(value >= total_fee, HotelError::NotEnoughAgreementFee);
 
+        // room must be `vacant` to pass the agreement
+        ensure!(room.vacant == true, HotelError::RoomIsNotVacant);
+
         // transfer `total_fee` to `landlord`
         Self::env()
             .transfer(room_landlord, total_fee)
@@ -80,11 +86,21 @@ where
         // get the `next_room_agreement_id`
         let agreement_id = self.next_agreement_id();
 
-        // update `room` data of `room_id`
-        room.current_tenant = caller;
-        room.vacant = false;
-        room.time_stamp = Self::env().block_timestamp();
-        room.agreement_id = agreement_id;
+        // update and insert `room` data of `room_id`
+        let room = Room {
+            room_id,
+            agreement_id,
+            room_name: room.room_name,
+            room_address: room.room_address,
+            rent_per_month: room.rent_per_month,
+            security_deposit: room.security_deposit,
+            time_stamp: Self::env().block_timestamp(),
+            vacant: false,
+            landlord: room.landlord,
+            current_tenant: caller,
+        };
+
+        self.data::<Data>().room.insert(&room_id, &room);
 
         // create new `RoomAgreement` object with given fields
         let agreement = RoomAgreement {
@@ -126,16 +142,132 @@ where
     }
 
     default fn pay_rent(&mut self, room_id: RoomId) -> Result<(), HotelError> {
+        let caller = Self::env().caller();
+        let value = Self::env().transferred_value();
+
+        // get the room and check whether it exists or not
+        let room = match self.data::<Data>().room.get(&room_id) {
+            Some(value) => value,
+            None => return Err(HotelError::RoomNotFound),
+        };
+
+        // check `caller` is same as `room.tenant_address`
+        ensure!(caller == room.current_tenant, HotelError::NotATenantAddress);
+
+        // check `rent` is enough to pay
+        ensure!(value >= room.rent_per_month, HotelError::NotEnoughRentFee);
+
+        // TODO: check if it is time to pay rent of the room
+
+        let land_lord = room.landlord;
+        let rent = room.rent_per_month;
+
+        // transfer `rent` to the `land_lord`
+        Self::env().transfer(land_lord, rent).unwrap_or_default();
+
+        // update and insert `room` data of `room_id`
+        let room = Room {
+            room_id,
+            agreement_id: room.agreement_id,
+            room_name: room.room_name,
+            room_address: room.room_address,
+            rent_per_month: room.rent_per_month,
+            security_deposit: room.security_deposit,
+            time_stamp: room.time_stamp,
+            vacant: false,
+            landlord: room.landlord,
+            current_tenant: caller,
+        };
+
+        self.data::<Data>().room.insert(&room_id, &room);
+
+        // get the `rent_id` & `agreement_id`
+        let rent_id = self.next_rent_id();
+        let agreement_id = self.next_agreement_id();
+
+        // create new `Rent` object with the given fields
+        let rent = Rent {
+            rent_id,
+            room_id,
+            agreement_id,
+            room_name: room.room_name,
+            room_address: room.room_address,
+            rent_per_month: room.rent_per_month,
+            time_stamp: room.time_stamp,
+            tenant_address: caller,
+            land_lord_address: land_lord,
+        };
+
+        // insert `rent` to the mapping
+        self.data::<Data>().rent.insert(&rent_id, &rent);
+
         Ok(())
     }
 
     #[modifiers(only_owner)]
     default fn agreement_completed(&mut self, room_id: RoomId) -> Result<(), HotelError> {
+        let room = match self.data::<Data>().room.get(&room_id) {
+            Some(value) => value,
+            None => return Err(HotelError::RoomNotFound),
+        };
+
+        // check if room is not vacant
+        ensure!(room.vacant == false, HotelError::RoomIsVacant);
+        // TODO: check if it is time to pay rent of the room
+
+        // get the `current_tenant` & `security_deposit`
+        let current_tenant = room.current_tenant;
+        let security_deposit = room.security_deposit;
+
+        // transfer `security_deposit` to  the `current_tenant` after complete agreement
+        Self::env()
+            .transfer(current_tenant, security_deposit)
+            .unwrap_or_default();
+
+        // update room after agreement completes
+        let room = Room {
+            room_id,
+            agreement_id: room.agreement_id,
+            room_name: room.room_name,
+            room_address: room.room_address,
+            rent_per_month: room.rent_per_month,
+            security_deposit: room.security_deposit,
+            time_stamp: room.time_stamp,
+            vacant: true,
+            landlord: room.landlord,
+            current_tenant: ZERO_ADDRESS.into(),
+        };
+
+        self.data::<Data>().room.insert(&room_id, &room);
+
         Ok(())
     }
 
     #[modifiers(only_owner)]
     default fn agreement_terminated(&mut self, room_id: RoomId) -> Result<(), HotelError> {
+        let room = match self.data::<Data>().room.get(&room_id) {
+            Some(value) => value,
+            None => return Err(HotelError::RoomNotFound),
+        };
+
+        // can only terminate agreement if room is not vacant
+        ensure!(room.vacant == false, HotelError::RoomIsVacant);
+
+        // update room after agreement termination
+        let room = Room {
+            room_id,
+            agreement_id: room.agreement_id,
+            room_name: room.room_name,
+            room_address: room.room_address,
+            rent_per_month: room.rent_per_month,
+            security_deposit: room.security_deposit,
+            time_stamp: room.time_stamp,
+            vacant: true,
+            landlord: room.landlord,
+            current_tenant: ZERO_ADDRESS.into(),
+        };
+
+        self.data::<Data>().room.insert(&room_id, &room);
         Ok(())
     }
 
@@ -160,14 +292,15 @@ where
 
 // modifier to check normal user
 #[modifier_definition]
-pub fn normal_user<T, F, R, E>(instance: &mut T, body: F) -> Result<R, E>
+pub fn is_normal_user<T, F, R, E>(instance: &mut T, body: F) -> Result<R, E>
 where
     T: Storage<Data>,
     F: FnOnce(&mut T) -> Result<R, E>,
     E: From<HotelError>,
 {
-    if instance.data().land_lord == T::env().caller() {
-        return Err(From::from(HotelError::CallerIsOwner));
-    }
+    ensure!(
+        T::env().caller() != instance.data().land_lord,
+        HotelError::CallerIsOwner
+    );
     body(instance)
 }
