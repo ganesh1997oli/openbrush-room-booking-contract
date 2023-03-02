@@ -1,6 +1,9 @@
-use crate::impls::room_book::types::{AgreementId, HotelError, RentId, RoomId};
-use ink::prelude::string::String;
-use openbrush::traits::Timestamp;
+use crate::impls::room_book::{
+    room_book::Room,
+    types::{AgreementId, HotelError, RentId, RoomId},
+};
+use ink::prelude::{string::String, vec::Vec};
+use openbrush::traits::{AccountId, Timestamp};
 
 #[openbrush::trait_definition]
 pub trait RoomBook {
@@ -27,7 +30,15 @@ pub trait RoomBook {
     #[ink(message, payable)]
     fn agreement_terminated(&mut self, room_id: RoomId) -> Result<(), HotelError>;
 
+    #[ink(message)]
+    fn get_room(&self, room_id: RoomId) -> Vec<Room>;
+
+    #[ink(message)]
+    fn get_landlord(&self);
+
     fn next_room_id(&mut self) -> RoomId;
+
     fn next_agreement_id(&mut self) -> AgreementId;
+
     fn next_rent_id(&mut self) -> RentId;
 }

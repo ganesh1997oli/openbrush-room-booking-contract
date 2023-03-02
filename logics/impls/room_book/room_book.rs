@@ -5,7 +5,10 @@ pub use crate::{
     },
     traits::room_book::*,
 };
-use ink::prelude::string::String;
+use ink::{
+    env::debug_println,
+    prelude::{string::String, vec::Vec},
+};
 use openbrush::{
     contracts::ownable::*,
     modifier_definition, modifiers,
@@ -106,7 +109,7 @@ where
             room_address: room.room_address,
             rent_per_month: room.rent_per_month,
             security_deposit: room.security_deposit,
-            time_stamp: Self::env().block_timestamp(),
+            time_stamp: room.time_stamp,
             vacant: false,
             landlord: room.landlord,
             current_tenant: caller,
@@ -290,6 +293,15 @@ where
         self.emit_agreement_terminated_event(room_id);
         Ok(())
     }
+
+    fn get_room(&self, room_id: RoomId) -> Vec<Room> {
+        let room: Vec<Room> = Vec::new();
+        // TODO: get all the room
+        room
+    }
+
+    // TODO: get landlord
+    fn get_landlord(&self) {}
 
     fn next_room_id(&mut self) -> RoomId {
         let room_id = self.data::<Data>().room_id;
