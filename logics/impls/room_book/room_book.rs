@@ -5,10 +5,7 @@ pub use crate::{
     },
     traits::room_book::*,
 };
-use ink::{
-    env::debug_println,
-    prelude::{string::String, vec::Vec},
-};
+use ink::prelude::{string::String, vec::Vec};
 use openbrush::{
     contracts::ownable::*,
     modifier_definition, modifiers,
@@ -294,14 +291,21 @@ where
         Ok(())
     }
 
-    fn get_room(&self, room_id: RoomId) -> Vec<Room> {
-        let room: Vec<Room> = Vec::new();
-        // TODO: get all the room
+    fn get_room(&self) -> Vec<Room> {
+        let mut room: Vec<Room> = Vec::new();
+        for room_id in 0..self.data::<Data>().room_id {
+            match self.data::<Data>().room.get(&room_id) {
+                Some(value) => room.push(value),
+                None => (),
+            }
+        }
+
         room
     }
 
-    // TODO: get landlord
-    fn get_landlord(&self) {}
+    fn get_landlord(&self) -> AccountId {
+        self.data::<Data>().land_lord.clone()
+    }
 
     fn next_room_id(&mut self) -> RoomId {
         let room_id = self.data::<Data>().room_id;

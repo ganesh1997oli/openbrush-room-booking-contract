@@ -31,10 +31,10 @@ pub trait RoomBook {
     fn agreement_terminated(&mut self, room_id: RoomId) -> Result<(), HotelError>;
 
     #[ink(message)]
-    fn get_room(&self, room_id: RoomId) -> Vec<Room>;
+    fn get_room(&self) -> Vec<Room>;
 
     #[ink(message)]
-    fn get_landlord(&self);
+    fn get_landlord(&self) -> AccountId;
 
     fn next_room_id(&mut self) -> RoomId;
 
