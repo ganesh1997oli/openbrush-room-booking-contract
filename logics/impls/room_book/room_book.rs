@@ -53,6 +53,7 @@ where
             vacant: true,
             landlord: caller,
             current_tenant: ZERO_ADDRESS.into(),
+            next_rent_due_date: Timestamp::from(0u64),
         };
 
         // insert room in `Mapping` with respect to key `room_id`
@@ -110,6 +111,7 @@ where
             vacant: false,
             landlord: room.landlord,
             current_tenant: caller,
+            next_rent_due_date: room.time_stamp,
         };
 
         self.data::<Data>().room.insert(&room_id, &room);
@@ -192,6 +194,7 @@ where
             vacant: false,
             landlord: room.landlord,
             current_tenant: caller,
+            next_rent_due_date: room.time_stamp,
         };
 
         self.data::<Data>().room.insert(&room_id, &room);
@@ -253,6 +256,7 @@ where
             vacant: true,
             landlord: room.landlord,
             current_tenant: ZERO_ADDRESS.into(),
+            next_rent_due_date: room.time_stamp,
         };
 
         self.data::<Data>().room.insert(&room_id, &room);
@@ -284,6 +288,7 @@ where
             vacant: true,
             landlord: room.landlord,
             current_tenant: ZERO_ADDRESS.into(),
+            next_rent_due_date: room.time_stamp,
         };
 
         self.data::<Data>().room.insert(&room_id, &room);
