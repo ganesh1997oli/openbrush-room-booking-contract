@@ -37,6 +37,9 @@ where
         // caller of the contract
         let caller = Self::env().caller();
 
+        // TODO: check for `room_name` & `room_address` length > 4
+        // TODO: check for `rent_per_month` & `security_deposit` > 0
+
         // get `room_id` & `agreement_id`
         let room_id = self.next_room_id();
         let agreement_id = self.next_agreement_id();
@@ -230,6 +233,7 @@ where
 
         // check if room is not vacant
         ensure!(room.vacant == false, HotelError::RoomIsVacant);
+
         // TODO: check if it is time to pay rent of the room
 
         // get the `current_tenant` & `security_deposit`
@@ -291,7 +295,9 @@ where
         Ok(())
     }
 
-    fn get_room(&self) -> Vec<Room> {
+    // owner of the contract allowed to view all the rooms
+    #[modifiers(only_owner)]
+    default fn get_room(&self) -> Vec<Room> {
         let mut room: Vec<Room> = Vec::new();
         for room_id in 0..self.data::<Data>().room_id {
             match self.data::<Data>().room.get(&room_id) {
@@ -303,23 +309,40 @@ where
         room
     }
 
+    // get the available rooms from the hotel
+    default fn get_available_room(&self) -> Vec<Room> {
+        let mut room: Vec<Room> = Vec::new();
+        for room_id in 0..self.data::<Data>().room_id {
+            match self.data::<Data>().room.get(&room_id) {
+                Some(value) => {
+                    if value.vacant == true {
+                        room.push(value)
+                    }
+                }
+                None => (),
+            }
+        }
+
+        room
+    }
+
     fn get_landlord(&self) -> AccountId {
         self.data::<Data>().land_lord.clone()
     }
 
-    fn next_room_id(&mut self) -> RoomId {
+    default fn next_room_id(&mut self) -> RoomId {
         let room_id = self.data::<Data>().room_id;
         self.data::<Data>().room_id += 1;
         room_id
     }
 
-    fn next_agreement_id(&mut self) -> AgreementId {
+    default fn next_agreement_id(&mut self) -> AgreementId {
         let agreement_id = self.data::<Data>().agreement_id;
         self.data::<Data>().agreement_id += 1;
         agreement_id
     }
 
-    fn next_rent_id(&mut self) -> RentId {
+    default fn next_rent_id(&mut self) -> RentId {
         let rent_id = self.data::<Data>().rent_id;
         self.data::<Data>().rent_id += 1;
         rent_id

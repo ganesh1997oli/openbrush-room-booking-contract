@@ -7,7 +7,6 @@ use openbrush::traits::{AccountId, Timestamp};
 
 #[openbrush::trait_definition]
 pub trait RoomBook {
-    // only owner can create
     #[ink(message)]
     fn add_room(
         &mut self,
@@ -32,6 +31,9 @@ pub trait RoomBook {
 
     #[ink(message)]
     fn get_room(&self) -> Vec<Room>;
+
+    #[ink(message)]
+    fn get_available_room(&self) -> Vec<Room>;
 
     #[ink(message)]
     fn get_landlord(&self) -> AccountId;

@@ -31,7 +31,7 @@ async fn add_new_room_works(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> 
         )
     });
     let _ = client
-        .call(&ink_e2e::alice(), &add_room, 0, None)
+        .call(&ink_e2e::alice(), add_room, 0, None)
         .await
         .expect("calling add_room failed");
 
