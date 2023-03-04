@@ -296,7 +296,7 @@ where
     }
 
     // owner of the contract allowed to view all the rooms
-    #[modifiers(only_owner)]
+    // #[modifiers(only_owner)]
     default fn get_room(&self) -> Vec<Room> {
         let mut room: Vec<Room> = Vec::new();
         for room_id in 0..self.data::<Data>().room_id {

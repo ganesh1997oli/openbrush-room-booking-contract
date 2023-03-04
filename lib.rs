@@ -2,7 +2,7 @@
 #![feature(min_specialization)]
 
 #[openbrush::contract]
-mod hotel {
+mod contract {
     use ink::codegen::EmitEvent;
     use ink::codegen::Env;
     use logics::{
