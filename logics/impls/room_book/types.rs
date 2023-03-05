@@ -30,6 +30,7 @@ pub struct Room {
     pub vacant: bool,
     pub landlord: AccountId,
     pub current_tenant: AccountId,
+    pub next_rent_due_date: Timestamp,
 }
 
 impl Default for Room {
@@ -45,6 +46,7 @@ impl Default for Room {
             vacant: Default::default(),
             landlord: ZERO_ADDRESS.into(),
             current_tenant: ZERO_ADDRESS.into(),
+            next_rent_due_date: Default::default(),
         }
     }
 }
