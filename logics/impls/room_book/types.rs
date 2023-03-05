@@ -11,6 +11,8 @@ pub type RoomId = i32;
 pub type AgreementId = i32;
 pub type RentId = i32;
 
+pub type RoomResult = Result<(), HotelError>;
+
 // pub const ROOM_STORAGE_KEY: u32 = openbrush::storage_unique_key!(Room);
 
 #[derive(scale::Decode, scale::Encode, Debug, Clone, Eq, PartialEq)]

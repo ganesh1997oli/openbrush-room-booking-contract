@@ -12,6 +12,8 @@ use openbrush::{
     traits::{AccountId, Storage, Timestamp, ZERO_ADDRESS},
 };
 
+use super::types::RoomResult;
+
 // Events of Hotel room booking
 pub trait HotelRoomBookingEvents {
     fn emit_add_room_event(&self, room_id: RoomId, owner: AccountId);
@@ -33,7 +35,7 @@ where
         rent_per_month: u128,
         security_deposit: u128,
         time_stamp: Timestamp,
-    ) -> Result<(), HotelError> {
+    ) -> RoomResult {
         // caller of the contract
         let caller = Self::env().caller();
 
@@ -69,7 +71,7 @@ where
     }
 
     #[modifiers(is_normal_user)]
-    default fn sign_agreement(&mut self, room_id: RoomId) -> Result<(), HotelError> {
+    default fn sign_agreement(&mut self, room_id: RoomId) -> RoomResult {
         // caller of the contract
         let caller = Self::env().caller();
 
@@ -161,7 +163,7 @@ where
         Ok(())
     }
 
-    default fn pay_rent(&mut self, room_id: RoomId) -> Result<(), HotelError> {
+    default fn pay_rent(&mut self, room_id: RoomId) -> RoomResult {
         let caller = Self::env().caller();
         let value = Self::env().transferred_value();
 
@@ -227,7 +229,7 @@ where
     }
 
     #[modifiers(only_owner)]
-    default fn agreement_completed(&mut self, room_id: RoomId) -> Result<(), HotelError> {
+    default fn agreement_completed(&mut self, room_id: RoomId) -> RoomResult {
         let room = match self.data::<Data>().room.get(&room_id) {
             Some(value) => value,
             None => return Err(HotelError::RoomNotFound),
@@ -270,7 +272,7 @@ where
     }
 
     #[modifiers(only_owner)]
-    default fn agreement_terminated(&mut self, room_id: RoomId) -> Result<(), HotelError> {
+    default fn agreement_terminated(&mut self, room_id: RoomId) -> RoomResult {
         let room = match self.data::<Data>().room.get(&room_id) {
             Some(value) => value,
             None => return Err(HotelError::RoomNotFound),

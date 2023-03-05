@@ -1,6 +1,6 @@
 use crate::impls::room_book::{
     room_book::Room,
-    types::{AgreementId, HotelError, RentId, RoomId},
+    types::{AgreementId, HotelError, RentId, RoomId, RoomResult},
 };
 use ink::prelude::{string::String, vec::Vec};
 use openbrush::traits::{AccountId, Timestamp};
@@ -16,24 +16,24 @@ pub trait RoomBook {
         rent_per_month: u128,
         security_deposit: u128,
         time_stamp: Timestamp,
-    ) -> Result<(), HotelError>;
+    ) -> RoomResult;
 
     /// user other than `landlord` call the `sign_agreement` function
     #[ink(message, payable)]
-    fn sign_agreement(&mut self, room_id: RoomId) -> Result<(), HotelError>;
+    fn sign_agreement(&mut self, room_id: RoomId) -> RoomResult;
 
     /// room musn't be vacant and user should be tenant to call `pay_rent` function
     #[ink(message, payable)]
-    fn pay_rent(&mut self, room_id: RoomId) -> Result<(), HotelError>;
+    fn pay_rent(&mut self, room_id: RoomId) -> RoomResult;
 
     /// If room is occupied by tenant and timeperiod of agreement complete then
     /// `landlord` allowed to call this function
     #[ink(message, payable)]
-    fn agreement_completed(&mut self, room_id: RoomId) -> Result<(), HotelError>;
+    fn agreement_completed(&mut self, room_id: RoomId) -> RoomResult;
 
     /// On behalf of any suspecious customer, `landlord` allowed to call this function
     #[ink(message, payable)]
-    fn agreement_terminated(&mut self, room_id: RoomId) -> Result<(), HotelError>;
+    fn agreement_terminated(&mut self, room_id: RoomId) -> RoomResult;
 
     /// `landlord` is allowed to call this function to get all the room
     #[ink(message)]
