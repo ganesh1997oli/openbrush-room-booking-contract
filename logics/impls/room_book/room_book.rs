@@ -67,7 +67,7 @@ where
         // event call
         self.emit_add_room_event(room_id, caller);
 
-        Ok(())
+        Ok(room_id)
     }
 
     #[modifiers(is_normal_user)]
@@ -160,7 +160,7 @@ where
         // call the event
         self.emit_sign_agreement_event(room_id, caller);
 
-        Ok(())
+        Ok(room_id)
     }
 
     default fn pay_rent(&mut self, room_id: RoomId) -> RoomResult {
@@ -225,7 +225,7 @@ where
 
         self.emit_rent_payment_event(room_id, caller);
 
-        Ok(())
+        Ok(room_id)
     }
 
     #[modifiers(only_owner)]
@@ -268,7 +268,7 @@ where
 
         self.emit_agreement_complete_event(room_id);
 
-        Ok(())
+        Ok(room_id)
     }
 
     #[modifiers(only_owner)]
@@ -298,7 +298,7 @@ where
 
         self.data::<Data>().room.insert(&room_id, &room);
         self.emit_agreement_terminated_event(room_id);
-        Ok(())
+        Ok(room_id)
     }
 
     // owner of the contract allowed to view all the rooms

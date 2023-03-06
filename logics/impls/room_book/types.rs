@@ -11,7 +11,7 @@ pub type RoomId = i32;
 pub type AgreementId = i32;
 pub type RentId = i32;
 
-pub type RoomResult = Result<(), HotelError>;
+pub type RoomResult = Result<RoomId, HotelError>;
 
 // pub const ROOM_STORAGE_KEY: u32 = openbrush::storage_unique_key!(Room);
 
@@ -142,7 +142,7 @@ impl Default for Data {
     }
 }
 
-#[derive(scale::Decode, scale::Encode, PartialEq, Eq)]
+#[derive(scale::Decode, scale::Encode, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum HotelError {
     // Caller is not a marketplace owner.

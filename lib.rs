@@ -91,7 +91,131 @@ mod contract {
             self.env().emit_event(AgreementTerminatedEvent { room_id });
         }
     }
+
+    #[cfg(all(test, feature = "e2e-tests"))]
+    mod e2e_tests {
+        use crate::contract::types::Room;
+        use ink_e2e::build_message;
+        use logics::traits::room_book::roombook_external::RoomBook;
+        use openbrush::traits::ZERO_ADDRESS;
+
+        use super::*;
+        type E2EResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+        #[ink_e2e::test]
+        async fn new_works(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
+            // given
+            let constructor = HotelRef::new();
+            let contract_acc_id = client
+                .instantiate("contract", &ink_e2e::alice(), constructor, 0, None)
+                .await
+                .expect("failed to instantiate")
+                .account_id;
+
+            // when
+            let get_owner = build_message::<HotelRef>(contract_acc_id.clone())
+                .call(|_hotel| _hotel.get_landlord());
+            let get_owner_res = client
+                .call_dry_run(&ink_e2e::alice(), &get_owner, 0, None)
+                .await;
+
+            // check owner
+            assert_eq!(
+                get_owner_res.return_value(),
+                ink_e2e::account_id(ink_e2e::AccountKeyring::Alice)
+            );
+            Ok(())
+        }
+
+        #[ink_e2e::test]
+        async fn add_room_works(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
+            // given
+            let alice = ink_e2e::account_id(ink_e2e::AccountKeyring::Alice);
+            let constructor = HotelRef::new();
+            let contract_acc_id = client
+                .instantiate("contract", &ink_e2e::alice(), constructor, 0, None)
+                .await
+                .expect("failed to instantiate")
+                .account_id;
+
+            let room_name = String::from("room one");
+            let room_address = String::from("room address");
+            let rent_per_month = 10;
+            let security_deposit = 10;
+            let time_stamp = 10;
+
+            // Add room
+            let add_room = build_message::<HotelRef>(contract_acc_id.clone()).call(|hotel| {
+                hotel.add_room(
+                    room_name.clone(),
+                    room_address.clone(),
+                    rent_per_month,
+                    security_deposit,
+                    time_stamp,
+                )
+            });
+
+            let room_id = client
+                .call(&ink_e2e::alice(), add_room, 0, None)
+                .await
+                .expect("calling add_room failed");
+
+            // check event message
+            let contract_emitted_event = room_id
+                .events
+                .iter()
+                .find(|event| {
+                    event
+                        .as_ref()
+                        .expect("Expect Event")
+                        .event_metadata()
+                        .event()
+                        == "ContractEmitted"
+                })
+                .expect("Expect ContractEmitted event")
+                .unwrap();
+
+            // Decode the expected event type
+            let event = contract_emitted_event.field_bytes();
+            let decoded_event =
+                <AddRoomEvent as scale::Decode>::decode(&mut &event[1..])
+                    .expect("Invalid data");
+
+            let AddRoomEvent { room_id: id, owner } = decoded_event;
+
+            // assert with expected value
+            assert_eq!(id, room_id);
+
+            // get the room
+            let get_room =
+                build_message::<HotelRef>(contract_acc_id.clone()).call(|hote| hote.get_room());
+
+            let get_room_result = client
+                .call_dry_run(&ink_e2e::alice(), &get_room, 0, None)
+                .await;
+
+            // check room add successfully
+            assert_eq!(
+                get_room_result.return_value().unwrap(),
+                vec![Room {
+                    room_id: 0,
+                    agreement_id: 0,
+                    room_name,
+                    room_address,
+                    rent_per_month,
+                    security_deposit,
+                    time_stamp,
+                    vacant: true,
+                    landlord: alice,
+                    current_tenant: ZERO_ADDRESS.into(),
+                    next_rent_due_date: 0,
+                }]
+            );
+
+            Ok(())
+        }
+    }
 }
 
-#[cfg(all(test, feature = "e2e-tests"))]
-mod e2e_tests;
+// #[cfg(all(test, feature = "e2e-tests"))]
+// mod e2e_tests;
