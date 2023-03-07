@@ -39,8 +39,10 @@ where
         // caller of the contract
         let caller = Self::env().caller();
 
-        // TODO: check for `room_name` & `room_address` length > 4
-        // TODO: check for `rent_per_month` & `security_deposit` > 0
+        ensure!(room_name.len() > 4, HotelError::InvalidRoomLength);
+        ensure!(room_address.len() > 4, HotelError::InvalidAddressLength);
+        ensure!(rent_per_month > 0, HotelError::InvalidRentPerMonth);
+        ensure!(security_deposit > 0, HotelError::InvalidSecurityDeposit);
 
         // get `room_id` & `agreement_id`
         let room_id = self.next_room_id();
@@ -179,7 +181,8 @@ where
         // check `rent` is enough to pay
         ensure!(value >= room.rent_per_month, HotelError::NotEnoughRentFee);
 
-        // TODO: check if it is time to pay rent of the room
+        // TODO:
+        // check if it is time to pay rent of the room
         let land_lord = room.landlord;
         let rent = room.rent_per_month;
 
@@ -238,7 +241,8 @@ where
         // check if room is not vacant
         ensure!(room.vacant == false, HotelError::RoomIsVacant);
 
-        // TODO: check if it is time to pay rent of the room
+        // TODO:
+        // check if it is time to pay rent of the room
 
         // get the `current_tenant` & `security_deposit`
         let current_tenant = room.current_tenant;

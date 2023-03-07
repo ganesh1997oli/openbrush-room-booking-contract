@@ -178,10 +178,9 @@ mod contract {
             // Decode the expected event type
             let event = contract_emitted_event.field_bytes();
             let decoded_event =
-                <AddRoomEvent as scale::Decode>::decode(&mut &event[1..])
-                    .expect("Invalid data");
+                <AddRoomEvent as scale::Decode>::decode(&mut &event[1..]).expect("Invalid data");
 
-            let AddRoomEvent { room_id: id, owner } = decoded_event;
+            let AddRoomEvent { room_id: id, owner } = event1;
 
             // assert with expected value
             assert_eq!(id, room_id);
