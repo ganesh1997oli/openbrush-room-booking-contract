@@ -103,6 +103,9 @@ where
             .transfer(room_landlord, total_fee)
             .unwrap_or_default();
 
+        // TODO::
+        // check if user is eligible to receive the reward
+
         // get the `next_room_agreement_id`
         let agreement_id = self.next_agreement_id();
 
@@ -158,6 +161,16 @@ where
 
         // insert `Rent` in the rent mapping
         self.data::<Data>().rent.insert(&rent_id, &rent);
+
+        // Update room rent quantity
+        let rent_count = self
+            .data::<Data>()
+            .room_rent_quantity
+            .get(&caller)
+            .unwrap_or_default();
+        self.data::<Data>()
+            .room_rent_quantity
+            .insert(&caller, &(rent_count + 1));
 
         // call the event
         self.emit_sign_agreement_event(room_id, caller);
@@ -317,6 +330,11 @@ where
         }
 
         Ok(room)
+    }
+
+    // get how many times did user rent room
+    fn get_room_rent_count(&self, user: AccountId) -> Option<i32> {
+        self.data::<Data>().room_rent_quantity.get(&user)
     }
 
     // get the available rooms from the hotel

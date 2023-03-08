@@ -47,6 +47,9 @@ pub trait RoomBook {
     #[ink(message)]
     fn get_landlord(&self) -> AccountId;
 
+    #[ink(message)]
+    fn get_room_rent_count(&self, user: AccountId) -> Option<i32>;
+
     /// get the `next_room_id`
     fn next_room_id(&mut self) -> RoomId;
 

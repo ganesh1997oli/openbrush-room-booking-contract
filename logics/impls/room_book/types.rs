@@ -124,6 +124,7 @@ pub struct Data {
     pub room: Mapping<RoomId, Room>,
     pub agreement: Mapping<AgreementId, RoomAgreement>,
     pub rent: Mapping<RentId, Rent>,
+    pub room_rent_quantity: Mapping<AccountId, i32>,
 }
 
 impl Default for Data {
@@ -138,6 +139,7 @@ impl Default for Data {
             room: Mapping::default(),
             agreement: Mapping::default(),
             rent: Mapping::default(),
+            room_rent_quantity: Mapping::default(),
         }
     }
 }
