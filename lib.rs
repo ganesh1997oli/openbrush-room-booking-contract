@@ -131,6 +131,7 @@ mod contract {
         async fn add_room_works(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
             // given
             let alice = ink_e2e::account_id(ink_e2e::AccountKeyring::Alice);
+
             let constructor = HotelRef::new();
             let contract_acc_id = client
                 .instantiate("contract", &ink_e2e::alice(), constructor, 0, None)
@@ -155,13 +156,13 @@ mod contract {
                 )
             });
 
-            let room_id = client
+            let add_room = client
                 .call(&ink_e2e::alice(), add_room, 0, None)
                 .await
                 .expect("calling add_room failed");
 
             // check event message
-            let contract_emitted_event = room_id
+            let contract_emitted_event = add_room
                 .events
                 .iter()
                 .find(|event| {
@@ -178,12 +179,13 @@ mod contract {
             // Decode the expected event type
             let event = contract_emitted_event.field_bytes();
             let decoded_event =
-                <AddRoomEvent as scale::Decode>::decode(&mut &event[1..]).expect("Invalid data");
+                <AddRoomEvent as scale::Decode>::decode(&mut &event[34..]).expect("Invalid data");
 
-            let AddRoomEvent { room_id: id, owner } = event1;
+            let AddRoomEvent { room_id, owner } = decoded_event;
 
             // assert with expected value
-            assert_eq!(id, room_id);
+            assert_eq!(owner, alice);
+            assert_eq!(room_id, 0);
 
             // get the room
             let get_room =
