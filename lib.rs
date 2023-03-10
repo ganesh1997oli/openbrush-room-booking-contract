@@ -59,7 +59,7 @@ mod contract {
     }
 
     impl Hotel {
-        #[ink(constructor)]
+        #[ink(constructor, payable)]
         pub fn new() -> Self {
             let mut instance = Self::default();
             instance._init_with_owner(Self::env().caller());
@@ -107,7 +107,7 @@ mod contract {
             // given
             let constructor = HotelRef::new();
             let contract_acc_id = client
-                .instantiate("contract", &ink_e2e::alice(), constructor, 0, None)
+                .instantiate("contract", &ink_e2e::alice(), constructor, 1000, None)
                 .await
                 .expect("failed to instantiate")
                 .account_id;
@@ -134,7 +134,7 @@ mod contract {
 
             let constructor = HotelRef::new();
             let contract_acc_id = client
-                .instantiate("contract", &ink_e2e::alice(), constructor, 0, None)
+                .instantiate("contract", &ink_e2e::alice(), constructor, 1000, None)
                 .await
                 .expect("failed to instantiate")
                 .account_id;
@@ -215,8 +215,71 @@ mod contract {
 
             Ok(())
         }
+
+        #[ink_e2e::test]
+        async fn sign_agreement_works(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
+            // given
+            let constructor = HotelRef::new();
+            let contract_acc_id = client
+                .instantiate("contract", &ink_e2e::alice(), constructor, 1000, None)
+                .await
+                .expect("failed to instantiate")
+                .account_id;
+
+            let room_name = String::from("room one");
+            let room_address = String::from("room address");
+            let rent_per_month = 10;
+            let security_deposit = 10;
+            let time_stamp = 10;
+
+            // Add room
+            let room_id = build_message::<HotelRef>(contract_acc_id.clone()).call(|hotel| {
+                hotel.add_room(
+                    room_name.clone(),
+                    room_address.clone(),
+                    rent_per_month,
+                    security_deposit,
+                    time_stamp,
+                )
+            });
+
+            let _ = client
+                .call(&ink_e2e::alice(), room_id, 0, None)
+                .await
+                .expect("calling add_room failed");
+
+            // Sign Agreement
+            let sign_agreement = build_message::<HotelRef>(contract_acc_id.clone())
+                .call(|hotel| hotel.sign_agreement(0));
+
+            // since owner of contract cannot call `sign_agreement`
+            // so caller change to `bob`
+            let sign_agreement_response = client
+                .call(&ink_e2e::bob(), sign_agreement, 100, None)
+                .await
+                .expect("calling sign agreement failed");
+
+            // check event message for sign agreement
+            let contract_emitted_event = sign_agreement_response
+                .events
+                .iter()
+                .find(|event| {
+                    event
+                        .as_ref()
+                        .expect("Expect Event")
+                        .event_metadata()
+                        .event()
+                        == "ContractEmitted"
+                })
+                .expect("Expect ContractEmitted event")
+                .unwrap();
+
+            // Decode the expected event type
+            let event = contract_emitted_event.field_bytes();
+            let decoded_event = <SignAgreementEvent as scale::Decode>::decode(&mut &event[34..])
+                .expect("Invalid data");
+
+            Ok(())
+        }
     }
 }
-
-// #[cfg(all(test, feature = "e2e-tests"))]
-// mod e2e_tests;

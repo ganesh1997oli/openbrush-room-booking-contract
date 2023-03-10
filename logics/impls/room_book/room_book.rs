@@ -14,7 +14,7 @@ use openbrush::{
 
 use super::types::RoomResult;
 
-// Events of Hotel room booking
+// Events for Hotel room booking
 pub trait HotelRoomBookingEvents {
     fn emit_add_room_event(&self, room_id: RoomId, owner: AccountId);
     fn emit_sign_agreement_event(&self, room_id: RoomId, agreement_signer: AccountId);
@@ -37,8 +37,10 @@ where
         time_stamp: Timestamp,
     ) -> RoomResult {
         // caller of the contract
-        let caller = Self::env().caller();
+        let caller = T::env().caller();
 
+        // check validation for `room_name` length, `room_address` length, 
+        // `rent_per_month` and `security_deposit`
         ensure!(room_name.len() > 4, HotelError::InvalidRoomLength);
         ensure!(room_address.len() > 4, HotelError::InvalidAddressLength);
         ensure!(rent_per_month > 0, HotelError::InvalidRentPerMonth);
@@ -72,13 +74,14 @@ where
         Ok(room_id)
     }
 
+
     #[modifiers(is_normal_user)]
     default fn sign_agreement(&mut self, room_id: RoomId) -> RoomResult {
         // caller of the contract
-        let caller = Self::env().caller();
+        let caller = T::env().caller();
 
         // value transfer while calling contract
-        let value = Self::env().transferred_value();
+        let value = T::env().transferred_value();
 
         // get the romm of specific `room_id`
         let room = match self.data::<Data>().room.get(&room_id) {
@@ -179,8 +182,8 @@ where
     }
 
     default fn pay_rent(&mut self, room_id: RoomId) -> RoomResult {
-        let caller = Self::env().caller();
-        let value = Self::env().transferred_value();
+        let caller = T::env().caller();
+        let value = T::env().transferred_value();
 
         // get the room and check whether it exists or not
         let room = match self.data::<Data>().room.get(&room_id) {
@@ -195,7 +198,7 @@ where
         ensure!(value >= room.rent_per_month, HotelError::NotEnoughRentFee);
 
         // TODO:
-        // check if it is time to pay rent of the room
+        // check if it is time to pay rent for the room
         let land_lord = room.landlord;
         let rent = room.rent_per_month;
 
